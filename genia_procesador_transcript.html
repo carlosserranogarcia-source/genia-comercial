@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GENIA · Procesador de Transcript</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --border: #2a2a3a;
+    --accent: #e87c2e;
+    --accent2: #1db8a0;
+    --accent3: #785adc;
+    --text: #f0efe8;
+    --muted: #7a7a8a;
+    --danger: #e85555;
+    --success: #2ecc71;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-badge {
+    margin-left: auto;
+    background: linear-gradient(135deg, var(--accent2) 0%, #0e8a74 100%);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+
+  /* STEPS NAV */
+  .steps-nav {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .step-item.active {
+    border-bottom-color: var(--accent2);
+    color: var(--text);
+  }
+
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    flex-shrink: 0;
+  }
+
+  .step-item.active .step-num {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: #fff;
+  }
+
+  .step-item.done .step-num {
+    background: rgba(29,184,160,0.2);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  /* MAIN */
+  .main { display: grid; grid-template-columns: 400px 1fr; min-height: calc(100vh - 125px); }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  .panel-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--accent2); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; line-height: 1.6; }
+
+  .field { margin-bottom: 14px; }
+
+  /* TRANSCRIPT AREA */
+  .transcript-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .transcript-area {
+    flex: 1;
+    min-height: 280px;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 14px;
+  }
+
+  .char-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* BTNS */
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent2);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover { background: #169e89; transform: translateY(-1px); }
+  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 9px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .btn-accent {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+
+  .btn-accent:hover { background: #d06b1e; }
+
+  /* OUTPUT */
+  .output {
+    padding: 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    max-width: 380px;
+  }
+
+  .empty-icon {
+    width: 80px; height: 80px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 32px;
+  }
+
+  .empty-state h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .empty-state p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  /* BRIEF RESULT */
+  .brief-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+
+  .brief-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(29,184,160,0.15);
+    border: 1px solid rgba(29,184,160,0.3);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+
+  .brief-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .brief-sub { color: var(--muted); font-size: 13px; }
+
+  /* SECTION */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .section-icon.orange { background: rgba(232,124,46,0.2); }
+  .section-icon.teal { background: rgba(29,184,160,0.2); }
+  .section-icon.purple { background: rgba(120,90,220,0.2); }
+  .section-icon.blue { background: rgba(60,130,240,0.2); }
+  .section-icon.red { background: rgba(232,85,85,0.2); }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    flex: 1;
+  }
+
+  .section-body { padding: 20px; }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .kpi-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .kpi-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .kpi-label { font-size: 11px; color: var(--muted); line-height: 1.3; }
+
+  /* PROCESO CARD */
+  .proceso-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .proceso-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .proceso-dot.manual { background: var(--danger); }
+  .proceso-dot.parcial { background: var(--accent); }
+  .proceso-dot.digital { background: var(--accent2); }
+
+  .proceso-info { flex: 1; }
+
+  .proceso-nombre {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .proceso-detalle {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .proceso-estado {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .estado-manual { background: rgba(232,85,85,0.15); color: var(--danger); }
+  .estado-parcial { background: rgba(232,124,46,0.15); color: var(--accent); }
+  .estado-digital { background: rgba(29,184,160,0.15); color: var(--accent2); }
+
+  /* DOLOR CARD */
+  .dolor-card {
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 8px;
+  }
+
+  .dolor-nivel {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .dolor-nivel.alto { color: var(--danger); }
+  .dolor-nivel.medio { color: var(--accent); }
+  .dolor-nivel.bajo { color: var(--muted); }
+
+  .dolor-texto {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 3px;
+  }
+
+  .dolor-evidencia {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  /* MODULE ROW */
+  .module-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    transition: border-color 0.2s;
+  }
+
+  .module-row:hover { border-color: var(--accent2); }
+
+  .module-num {
+    min-width: 28px; height: 28px;
+    background: rgba(29,184,160,0.2);
+    color: var(--accent2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .module-info { flex: 1; }
+  .module-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .module-why { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  .module-impact {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .impact-alto { background: rgba(232,124,46,0.2); color: var(--accent); }
+  .impact-medio { background: rgba(29,184,160,0.15); color: var(--accent2); }
+  .impact-bajo { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+  /* BRIEF TÉCNICO */
+  .brief-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .brief-block-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 8px;
+  }
+
+  .brief-block-text {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* PRESUPUESTO */
+  .budget-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .budget-row:last-child { border-bottom: none; }
+
+  .budget-label { flex: 1; font-size: 13px; }
+
+  .budget-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  /* LOADER */
+  .loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: auto;
+    text-align: center;
+  }
+
+  .loader-ring {
+    width: 56px; height: 56px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-text { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--muted); }
+  .loader-step { font-size: 12px; color: var(--muted); opacity: 0.7; }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent2);
+    transition: width 0.5s;
+  }
+
+  /* URGENCY */
+  .urgency-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+
+  .urgency-icon { font-size: 20px; flex-shrink: 0; }
+
+  /* TAG */
+  .tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin: 2px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent2);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit:scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media print {
+    header, .steps-nav, .panel { display: none; }
+    .main { grid-template-columns: 1fr; }
+    .output { padding: 20px; }
+    body { background: #fff; color: #111; }
+    .section { border: 1px solid #ddd; break-inside: avoid; }
+    .kpi-card, .proceso-card, .module-row, .dolor-card, .brief-block { background: #f9f9f9; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="width:44px;height:44px;background:linear-gradient(135deg,#e8622e,#1db8a0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;">G</div>
+    <div>
+      <div class="header-title">GENIA</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:-2px;">Inteligencia Artificial · Automatización</div>
+    </div>
+  </div>
+  <div class="header-badge">Módulo 2 · Brief Técnico</div>
+</header>
+
+<nav class="steps-nav">
+  <div class="step-item done">
+    <div class="step-num">✓</div>
+    <span>Guion de indagación</span>
+  </div>
+  <div style="color:var(--border);padding:0 4px;">›</div>
+  <div class="step-item active">
+    <div class="step-num">2</div>
+    <span>Procesador de transcript</span>
+  </div>
+  <div style="color:var(--border);padding:0 4px;">›</div>
+  <div class="step-item">
+    <div class="step-num">3</div>
+    <span>Propuesta comercial</span>
+  </div>
+  <div style="color:var(--border);padding:0 4px;">›</div>
+  <div class="step-item">
+    <div class="step-num">4</div>
+    <span>Reunión de cierre</span>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- PANEL IZQUIERDO -->
+  <aside class="panel">
+
+    <div>
+      <div class="panel-label">Datos de la reunión</div>
+      <div class="field">
+        <label>Empresa cliente</label>
+        <input type="text" id="empresaInput" placeholder="Ej: Instalaciones García S.L.">
+      </div>
+      <div class="field">
+        <label>Nicho / sector</label>
+        <input type="text" id="nichoInput" placeholder="Ej: Instaladores eléctricos">
+      </div>
+      <div class="field">
+        <label>Fecha de reunión</label>
+        <input type="date" id="fechaInput">
+      </div>
+      <div class="field">
+        <label>Interlocutor (nombre y cargo)</label>
+        <input type="text" id="interlocutorInput" placeholder="Ej: Juan García, Gerente">
+      </div>
+    </div>
+
+    <div class="transcript-wrapper">
+      <div class="panel-label">Transcript de la reunión</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">Pega aquí la transcripción completa. Puede ser texto bruto de Whisper, Fireflies o cualquier herramienta de transcripción.</p>
+      <textarea
+        id="transcriptInput"
+        class="transcript-area"
+        placeholder="[00:00] Comercial: Buenas tardes, muchas gracias por recibirnos...
+[00:12] Cliente: Claro, cuéntame en qué consiste esto...
+[00:28] Comercial: Llevamos trabajando con empresas del sector instalaciones y hemos visto que uno de los grandes dolores es la gestión de presupuestos...
+
+Pega aquí tu transcript completo."
+        oninput="updateCharCount(this)"
+      ></textarea>
+      <div class="char-count" id="charCount">0 caracteres</div>
+    </div>
+
+    <div>
+      <div class="panel-label">Contexto adicional</div>
+      <div class="field">
+        <label>Tamaño de la empresa</label>
+        <select id="tamanoSelect">
+          <option value="">Sin especificar</option>
+          <option value="micro">Micro (1-5 empleados)</option>
+          <option value="pequeña">Pequeña (6-25 empleados)</option>
+          <option value="mediana">Mediana (26-100 empleados)</option>
+          <option value="grande">Grande (+100 empleados)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Señales de presupuesto detectadas</label>
+        <select id="budgetSelect">
+          <option value="desconocido">Sin información</option>
+          <option value="bajo">Bajo (mencionó limitaciones)</option>
+          <option value="medio">Medio (abierto a invertir)</option>
+          <option value="alto">Alto (urgencia + presupuesto claro)</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btnProcesar" onclick="procesarTranscript()">
+      <span>🧠</span> Procesar transcript con IA
+    </button>
+
+    <div style="padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Output generado</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.7;">
+        ✓ Resumen ejecutivo<br>
+        ✓ Procesos identificados<br>
+        ✓ Dolores confirmados<br>
+        ✓ Módulos Aiphier recomendados<br>
+        ✓ Brief técnico para el equipo<br>
+        ✓ Estimación de complejidad
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- OUTPUT -->
+  <main class="output" id="output">
+    <div class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h2>Convierte el transcript<br>en inteligencia</h2>
+      <p>Pega la transcripción de tu reunión de indagación y la IA extrae todo lo relevante: procesos, dolores, módulos aplicables y genera el brief listo para enviar al equipo técnico.</p>
+    </div>
+  </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATALOGO = [
+  {id:1, nombre:"Asistente de Email", cat:"Automatización"},
+  {id:2, nombre:"Seguimiento de Pedidos", cat:"Logística"},
+  {id:3, nombre:"Recepción de Facturas", cat:"Finanzas"},
+  {id:4, nombre:"Recepción de Pedidos", cat:"Operaciones"},
+  {id:5, nombre:"Chatbot de Datos", cat:"Business Intelligence"},
+  {id:6, nombre:"Seguimiento de Deuda", cat:"Finanzas"},
+  {id:7, nombre:"Sincronización de Datos", cat:"Integración"},
+  {id:8, nombre:"Clasificador de Documentos", cat:"Gestión documental"},
+  {id:9, nombre:"Numerador de Documentos", cat:"Gestión documental"},
+  {id:10, nombre:"Conversor de Documentos", cat:"Gestión documental"},
+  {id:11, nombre:"Archivador de Documentos", cat:"Gestión documental"},
+  {id:12, nombre:"Unificador de Documentos", cat:"Gestión documental"},
+  {id:13, nombre:"Conciliación Financiera", cat:"Finanzas"},
+  {id:14, nombre:"Gestión de Leads", cat:"CRM Comercial"},
+  {id:15, nombre:"Enriquecimiento de Datos", cat:"Datos"},
+  {id:16, nombre:"Firma de Documentos", cat:"Legal & Documental"},
+  {id:17, nombre:"Análisis y Optimización de Inversiones", cat:"Finanzas"},
+  {id:18, nombre:"Motor Editorial", cat:"Contenidos"},
+  {id:19, nombre:"Generador de Documentos", cat:"Documentación"},
+  {id:20, nombre:"Planificación de Inventario", cat:"Supply Chain"},
+  {id:21, nombre:"Ingesta de Documentos", cat:"Operaciones"},
+  {id:22, nombre:"Automatización de Campañas", cat:"Marketing"},
+  {id:23, nombre:"Atención al Cliente", cat:"Soporte"},
+  {id:24, nombre:"Ciclo de Vida de Contratos", cat:"Legal"},
+  {id:25, nombre:"Gestión de Aprobaciones", cat:"Operaciones"},
+  {id:26, nombre:"Visibilidad de Procesos", cat:"Operaciones"},
+  {id:27, nombre:"Informes Fiscales", cat:"Finanzas"},
+  {id:28, nombre:"Prospección de Leads", cat:"Ventas"},
+  {id:29, nombre:"Inteligencia de Leads", cat:"Ventas"},
+];
+
+function updateCharCount(el) {
+  document.getElementById('charCount').textContent = el.value.length.toLocaleString('es') + ' caracteres';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Set today's date
+document.getElementById('fechaInput').valueAsDate = new Date();
+
+async function procesarTranscript() {
+  const transcript = document.getElementById('transcriptInput').value.trim();
+  const empresa = document.getElementById('empresaInput').value.trim();
+  const nicho = document.getElementById('nichoInput').value.trim();
+  const fecha = document.getElementById('fechaInput').value;
+  const interlocutor = document.getElementById('interlocutorInput').value.trim();
+  const tamano = document.getElementById('tamanoSelect').value;
+  const budget = document.getElementById('budgetSelect').value;
+
+  if (!transcript || transcript.length < 100) {
+    showToast('El transcript es demasiado corto. Añade más contenido.');
+    return;
+  }
+
+  const btn = document.getElementById('btnProcesar');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Analizando transcript...';
+
+  const output = document.getElementById('output');
+  output.innerHTML = `
+    <div class="loader">
+      <div class="loader-ring"></div>
+      <div class="loader-text">Procesando transcript...</div>
+      <div class="loader-step">Extrayendo procesos, dolores y oportunidades</div>
+    </div>`;
+
+  const catalogoTexto = CATALOGO.map(m => `[${m.id}] ${m.nombre} (${m.cat})`).join('\n');
+
+  const prompt = `Eres un experto analista de negocio de GENIA, consultora de IA y automatización empresarial. Tu tarea es analizar el transcript de una reunión de indagación comercial y generar un brief técnico estructurado para el equipo de desarrollo.
+
+DATOS DE LA REUNIÓN:
+- Empresa: ${empresa || 'No especificada'}
+- Nicho: ${nicho || 'No especificado'}
+- Fecha: ${fecha || 'No especificada'}
+- Interlocutor: ${interlocutor || 'No especificado'}
+- Tamaño empresa: ${tamano || 'Sin información'}
+- Señal de presupuesto: ${budget}
+
+TRANSCRIPT:
+${transcript}
+
+CATÁLOGO DE MÓDULOS AIPHIER DISPONIBLES:
+${catalogoTexto}
+
+Analiza el transcript y genera un JSON con esta estructura exacta (sin texto fuera del JSON):
+{
+  "resumen_ejecutivo": "Resumen de 3-4 frases de la empresa, su situación actual y la oportunidad detectada",
+  "empresa_perfil": {
+    "sector_confirmado": "sector real detectado en la conversación",
+    "anos_actividad": "años si se mencionan, sino 'No mencionado'",
+    "num_empleados": "número si se menciona, sino 'No mencionado'",
+    "facturacion_estimada": "si se intuye del contexto, sino 'No mencionado'",
+    "herramientas_actuales": ["herramienta1", "herramienta2"],
+    "nivel_digitalizacion": "Bajo/Medio/Alto con justificación breve"
+  },
+  "procesos_identificados": [
+    {
+      "nombre": "nombre del proceso",
+      "descripcion": "cómo lo hacen actualmente",
+      "estado_actual": "manual/parcial/digital",
+      "frecuencia": "diario/semanal/mensual/variable",
+      "impacto_problema": "alto/medio/bajo"
+    }
+  ],
+  "dolores_confirmados": [
+    {
+      "dolor": "descripción del dolor o problema concreto",
+      "nivel": "alto/medio/bajo",
+      "evidencia": "cita o paráfrasis exacta del transcript que lo confirma",
+      "impacto_negocio": "consecuencia económica u operativa"
+    }
+  ],
+  "modulos_recomendados": [
+    {
+      "id": 1,
+      "nombre": "nombre del módulo",
+      "impacto": "alto/medio/bajo",
+      "justificacion": "por qué encaja con lo detectado en el transcript",
+      "proceso_que_resuelve": "qué proceso o dolor concreto ataca"
+    }
+  ],
+  "desarrollo_especifico": {
+    "necesario": true,
+    "descripcion": "descripción de lo que habría que desarrollar a medida si aplica, o null si no aplica",
+    "complejidad_estimada": "baja/media/alta/muy alta"
+  },
+  "brief_tecnico": {
+    "contexto": "Párrafo de contexto para el equipo técnico",
+    "objetivo": "Qué se quiere conseguir con la implementación",
+    "integraciones_necesarias": ["sistema1", "sistema2"],
+    "restricciones": ["restricción1 detectada en la reunión"],
+    "prioridad_implementacion": "alta/media/baja",
+    "modalidad_recomendada": "Cloud/Private/mixta con justificación"
+  },
+  "indicadores_urgencia": {
+    "nivel": "alta/media/baja",
+    "razones": ["razón1 detectada en el transcript", "razón2"],
+    "siguiente_paso_recomendado": "qué hacer en las próximas 48h"
+  },
+  "estimacion_complejidad": {
+    "modulos_estandar": "número de módulos Aiphier aplicables directamente",
+    "desarrollo_custom": "si/no y breve descripción",
+    "plazo_estimado_implementacion": "semanas aproximadas",
+    "nivel_overall": "llave en mano / proyecto medio / proyecto complejo"
+  },
+  "notas_comerciales": "Observaciones sobre el cliente: receptividad, objeciones surgidas, personas decisoras, aspectos a trabajar en el cierre"
+}
+
+Sé muy específico y basa TODO en lo que aparece en el transcript. Si algo no se menciona, indícalo como 'No mencionado'. Responde SOLO con el JSON.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content.map(i => i.text || '').join('');
+    let clean = text.replace(/```json|```/g, '').trim();
+
+    function repairJSON(str) {
+      let openBraces = 0, openBrackets = 0, inString = false, escape = false;
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        if (escape) { escape = false; continue; }
+        if (c === '\\' && inString) { escape = true; continue; }
+        if (c === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (c === '{') openBraces++;
+        if (c === '}') openBraces--;
+        if (c === '[') openBrackets++;
+        if (c === ']') openBrackets--;
+      }
+      if (inString) str += '"';
+      str = str.replace(/,\s*$/, '');
+      for (let i = 0; i < openBrackets; i++) str += ']';
+      for (let i = 0; i < openBraces; i++) str += '}';
+      return str;
+    }
+
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch(parseErr) {
+      const repaired = repairJSON(clean);
+      result = JSON.parse(repaired);
+    }
+    renderBrief(result, empresa, nicho, fecha, interlocutor);
+
+  } catch(err) {
+    output.innerHTML = `<div style="margin:auto;text-align:center;color:var(--danger);">
+      <div style="font-size:32px;margin-bottom:16px;">⚠</div>
+      <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;">Error al procesar</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px;">${err.message}</div>
+    </div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>🧠</span> Procesar transcript con IA';
+}
+
+function renderBrief(r, empresa, nicho, fecha, interlocutor) {
+  const output = document.getElementById('output');
+
+  // KPIs
+  const numProcesos = (r.procesos_identificados || []).length;
+  const numDolores = (r.dolores_confirmados || []).length;
+  const numModulos = (r.modulos_recomendados || []).length;
+  const urgencia = r.indicadores_urgencia?.nivel || 'media';
+  const urgenciaColor = urgencia === 'alta' ? 'var(--danger)' : urgencia === 'media' ? 'var(--accent)' : 'var(--accent2)';
+
+  // PROCESOS
+  let procesosHTML = '';
+  (r.procesos_identificados || []).forEach(p => {
+    const dotClass = p.estado_actual === 'manual' ? 'manual' : p.estado_actual === 'parcial' ? 'parcial' : 'digital';
+    const estadoClass = p.estado_actual === 'manual' ? 'estado-manual' : p.estado_actual === 'parcial' ? 'estado-parcial' : 'estado-digital';
+    procesosHTML += `
+      <div class="proceso-card">
+        <div class="proceso-dot ${dotClass}"></div>
+        <div class="proceso-info">
+          <div class="proceso-nombre">${p.nombre}</div>
+          <div class="proceso-detalle">${p.descripcion} · <span style="color:var(--muted)">${p.frecuencia || ''}</span></div>
+        </div>
+        <div class="proceso-estado ${estadoClass}">${p.estado_actual}</div>
+      </div>`;
+  });
+
+  // DOLORES
+  let doloresHTML = '';
+  (r.dolores_confirmados || []).forEach(d => {
+    const borderColor = d.nivel === 'alto' ? 'var(--danger)' : d.nivel === 'medio' ? 'var(--accent)' : 'var(--muted)';
+    doloresHTML += `
+      <div class="dolor-card" style="border-left-color:${borderColor}">
+        <div class="dolor-nivel ${d.nivel}">${d.nivel.toUpperCase()} IMPACTO</div>
+        <div class="dolor-texto">${d.dolor}</div>
+        ${d.evidencia ? `<div class="dolor-evidencia">"${d.evidencia}"</div>` : ''}
+        ${d.impacto_negocio ? `<div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:600;">→ ${d.impacto_negocio}</div>` : ''}
+      </div>`;
+  });
+
+  // MÓDULOS
+  let modulosHTML = '';
+  (r.modulos_recomendados || []).forEach(m => {
+    const impClass = m.impacto === 'alto' ? 'impact-alto' : m.impacto === 'medio' ? 'impact-medio' : 'impact-bajo';
+    modulosHTML += `
+      <div class="module-row">
+        <div class="module-num">${m.id}</div>
+        <div class="module-info">
+          <div class="module-name">${m.nombre}</div>
+          <div class="module-why">${m.justificacion}</div>
+          ${m.proceso_que_resuelve ? `<div style="font-size:11px;color:var(--accent2);margin-top:3px;">→ ${m.proceso_que_resuelve}</div>` : ''}
+        </div>
+        <div class="module-impact ${impClass}">${m.impacto}</div>
+      </div>`;
+  });
+
+  // PERFIL
+  const perfil = r.empresa_perfil || {};
+  const herramientasHTML = (perfil.herramientas_actuales || []).map(h => `<span class="tag">${h}</span>`).join('');
+
+  // INTEGRACIONES
+  const integracionesHTML = (r.brief_tecnico?.integraciones_necesarias || []).map(i => `<span class="tag">${i}</span>`).join('');
+  const restriccionesHTML = (r.brief_tecnico?.restricciones || []).map(r => `<div style="display:flex;gap:8px;margin-bottom:4px;"><span style="color:var(--danger);">▸</span><span style="font-size:13px;">${r}</span></div>`).join('');
+
+  // URGENCIA
+  const razonesHTML = (r.indicadores_urgencia?.razones || []).map(ra => `
+    <div class="urgency-row">
+      <div class="urgency-icon">⚡</div>
+      <div style="font-size:13px;">${ra}</div>
+    </div>`).join('');
+
+  // DEV ESPECÍFICO
+  const devHTML = r.desarrollo_especifico?.necesario ?
+    `<div class="brief-block" style="border-color:rgba(120,90,220,0.3);">
+      <div class="brief-block-label" style="color:var(--accent3);">Desarrollo a medida necesario</div>
+      <div class="brief-block-text">${r.desarrollo_especifico?.descripcion || ''}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted);">Complejidad estimada: <strong style="color:var(--text);">${r.desarrollo_especifico?.complejidad_estimada || ''}</strong></div>
+    </div>` : '';
+
+  const fechaFormateada = fecha ? new Date(fecha + 'T12:00:00').toLocaleDateString('es-ES', {day:'numeric',month:'long',year:'numeric'}) : '';
+
+  output.innerHTML = `
+    <div class="brief-header">
+      <div>
+        <div class="brief-badge">📋 Brief técnico</div>
+        <div class="brief-title">${empresa || 'Cliente'}</div>
+        <div class="brief-sub">${nicho ? nicho + ' · ' : ''}${interlocutor ? interlocutor + ' · ' : ''}${fechaFormateada}</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-shrink:0;">
+        <button class="btn-secondary" onclick="copiarBrief()">📋 Copiar brief</button>
+        <button class="btn-secondary" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn-accent" onclick="irAModulo3()">→ Generar propuesta</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--accent2)">${numProcesos}</div>
+        <div class="kpi-label">Procesos identificados</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--danger)">${numDolores}</div>
+        <div class="kpi-label">Dolores confirmados</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:var(--accent)">${numModulos}</div>
+        <div class="kpi-label">Módulos aplicables</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val" style="color:${urgenciaColor}">${urgencia.toUpperCase()}</div>
+        <div class="kpi-label">Urgencia detectada</div>
+      </div>
+    </div>
+
+    <!-- RESUMEN EJECUTIVO -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon teal">📌</div>
+        <div class="section-title">Resumen ejecutivo</div>
+      </div>
+      <div class="section-body">
+        <p style="font-size:14px;line-height:1.7;margin-bottom:16px;">${r.resumen_ejecutivo || ''}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div class="brief-block" style="margin:0">
+            <div class="brief-block-label">Sector confirmado</div>
+            <div class="brief-block-text">${perfil.sector_confirmado || '—'}</div>
+          </div>
+          <div class="brief-block" style="margin:0">
+            <div class="brief-block-label">Digitalización actual</div>
+            <div class="brief-block-text">${perfil.nivel_digitalizacion || '—'}</div>
+          </div>
+          <div class="brief-block" style="margin:0">
+            <div class="brief-block-label">Herramientas actuales</div>
+            <div class="brief-block-text">${herramientasHTML || '<span style="color:var(--muted)">No detectadas</span>'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROCESOS -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon orange">⚙️</div>
+        <div class="section-title">Procesos identificados · ${numProcesos} detectados</div>
+        <div style="display:flex;gap:8px;font-size:11px;">
+          <span style="color:var(--danger);">● Manual</span>
+          <span style="color:var(--accent);">● Parcial</span>
+          <span style="color:var(--accent2);">● Digital</span>
+        </div>
+      </div>
+      <div class="section-body">${procesosHTML || '<div style="color:var(--muted);font-size:13px;">No se identificaron procesos específicos en el transcript.</div>'}</div>
+    </div>
+
+    <!-- DOLORES -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon red">🔥</div>
+        <div class="section-title">Dolores confirmados en la reunión · ${numDolores} detectados</div>
+      </div>
+      <div class="section-body">${doloresHTML || '<div style="color:var(--muted);font-size:13px;">No se identificaron dolores explícitos.</div>'}</div>
+    </div>
+
+    <!-- MÓDULOS -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon teal">⚙️</div>
+        <div class="section-title">Módulos Aiphier recomendados · ${numModulos} seleccionados</div>
+      </div>
+      <div class="section-body">${modulosHTML}</div>
+    </div>
+
+    <!-- BRIEF TÉCNICO -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon purple">🛠</div>
+        <div class="section-title">Brief para el equipo técnico</div>
+      </div>
+      <div class="section-body">
+        <div class="brief-block">
+          <div class="brief-block-label">Contexto del cliente</div>
+          <div class="brief-block-text">${r.brief_tecnico?.contexto || ''}</div>
+        </div>
+        <div class="brief-block">
+          <div class="brief-block-label">Objetivo de la implementación</div>
+          <div class="brief-block-text">${r.brief_tecnico?.objetivo || ''}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="brief-block" style="margin:0">
+            <div class="brief-block-label">Integraciones necesarias</div>
+            <div class="brief-block-text">${integracionesHTML || '<span style="color:var(--muted)">Sin integraciones detectadas</span>'}</div>
+          </div>
+          <div class="brief-block" style="margin:0">
+            <div class="brief-block-label">Modalidad recomendada</div>
+            <div class="brief-block-text">${r.brief_tecnico?.modalidad_recomendada || '—'}</div>
+          </div>
+        </div>
+        ${restriccionesHTML ? `<div class="brief-block" style="margin-top:12px;">
+          <div class="brief-block-label">Restricciones detectadas</div>
+          <div class="brief-block-text">${restriccionesHTML}</div>
+        </div>` : ''}
+        ${devHTML}
+      </div>
+    </div>
+
+    <!-- COMPLEJIDAD -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon blue">📊</div>
+        <div class="section-title">Estimación de complejidad</div>
+      </div>
+      <div class="section-body">
+        <div class="budget-row">
+          <div class="budget-label">Módulos estándar Aiphier</div>
+          <div class="budget-val">${r.estimacion_complejidad?.modulos_estandar || '—'} módulos</div>
+        </div>
+        <div class="budget-row">
+          <div class="budget-label">Desarrollo custom</div>
+          <div class="budget-val" style="color:var(--accent3)">${r.estimacion_complejidad?.desarrollo_custom || '—'}</div>
+        </div>
+        <div class="budget-row">
+          <div class="budget-label">Plazo estimado de implementación</div>
+          <div class="budget-val">${r.estimacion_complejidad?.plazo_estimado_implementacion || '—'}</div>
+        </div>
+        <div class="budget-row">
+          <div class="budget-label">Tipología del proyecto</div>
+          <div class="budget-val" style="color:var(--accent2)">${r.estimacion_complejidad?.nivel_overall || '—'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- URGENCIA -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon red">🚨</div>
+        <div class="section-title">Urgencia y siguiente paso</div>
+      </div>
+      <div class="section-body">
+        ${razonesHTML}
+        ${r.indicadores_urgencia?.siguiente_paso_recomendado ? `
+        <div style="background:rgba(29,184,160,0.1);border:1px solid rgba(29,184,160,0.3);border-radius:8px;padding:14px;margin-top:12px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent2);margin-bottom:6px;">Próximo paso recomendado</div>
+          <div style="font-size:13px;line-height:1.5;">${r.indicadores_urgencia.siguiente_paso_recomendado}</div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <!-- NOTAS COMERCIALES -->
+    ${r.notas_comerciales ? `
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon orange">💡</div>
+        <div class="section-title">Notas comerciales (uso interno)</div>
+      </div>
+      <div class="section-body">
+        <div style="font-size:13px;line-height:1.7;color:var(--muted);font-style:italic;">${r.notas_comerciales}</div>
+      </div>
+    </div>` : ''}
+  `;
+
+  // Guardar datos para módulo 3
+  window._briefData = r;
+  window._briefMeta = { empresa, nicho, fecha, interlocutor };
+}
+
+function copiarBrief() {
+  const output = document.getElementById('output');
+  navigator.clipboard.writeText(output.innerText).then(() => showToast('✓ Brief copiado al portapapeles'));
+}
+
+function irAModulo3() {
+  showToast('Módulo 3 (Generador de propuesta) próximamente');
+}
+</script>
+</body>
+</html>
